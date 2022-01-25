@@ -6,10 +6,10 @@
 #include "SPI.h" // SPI library
 #include "MFRC522.h" // RFID library (https://github.com/miguelbalboa/rfid)
 
-const int pinRST = 9;
-const int pinSDA = 10;
+#define RST_PIN   9
+#define SS_PIN    10
 
-MFRC522 mfrc522(pinSDA, pinRST); // Set up mfrc522 on the Arduino
+MFRC522 mfrc522(SS_PIN, RST_PIN); // Set up mfrc522 instance on the Arduino
 
 void setup() {
   SPI.begin(); // open SPI connection

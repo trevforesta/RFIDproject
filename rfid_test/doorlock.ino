@@ -8,8 +8,6 @@
 
 #include <SPI.h>
 #include <MFRC522.h>
-#include <LiquidCrystal.h>
-#include <Servo.h>
 
 #define RST_PIN   9
 #define SS_PIN    10
@@ -21,33 +19,23 @@ String tagID = "";
 boolean successRead = false;
 boolean correctTag = false;
 int proximitySensor;
-boolean doorOpened = false;
 
 // Create instances
 MFRC522 mfrc522(SS_PIN, RST_PIN);
-LiquidCrystal lcd(2, 3, 4, 5, 6, 7); //Parameters: (rs, enable, d4, d5, d6, d7)
-Servo myServo; // Servo motor
 
 void setup() {
   // Initiating
   SPI.begin();        // SPI bus
   mfrc522.PCD_Init(); //  MFRC522
-  lcd.begin(16, 2);   // LCD screen
-  myServo.attach(8);  // Servo motor
 
-  myServo.write(10); // Initial lock position of the servo motor
-  // Prints the initial message
-  lcd.print("-No Master Tag!-");
-  lcd.setCursor(0, 1);
-  lcd.print("    SCAN NOW");
+  Serial.print("-No Master Tag!-");
+  Serial.print("SCAN NOW");
   // Waits until a master card is scanned
   while (!successRead) {
     successRead = getID();
     if ( successRead == true) {
       myTags[tagsCount] = strdup(tagID.c_str()); // Sets the master tag into position 0 in the array
-      lcd.clear();
-      lcd.setCursor(0, 0);
-      lcd.print("Master Tag Set!");
+      Serial.print("Master Tag Set!");
       tagsCount++;
     }
   }
@@ -57,7 +45,6 @@ void setup() {
 
 void loop() {
   int proximitySensor = analogRead(A0);
-  // If door is closed...
   if (proximitySensor > 200) {
     if ( ! mfrc522.PICC_IsNewCardPresent()) { //If a new PICC placed to RFID reader continue
       return;
@@ -77,27 +64,21 @@ void loop() {
     correctTag = false;
     // Checks whether the scanned tag is the master tag
     if (tagID == myTags[0]) {
-      lcd.clear();
-      lcd.print("Program mode:");
-      lcd.setCursor(0, 1);
-      lcd.print("Add/Remove Tag");
+      Serial.print("Program mode:");
+      Serial.print("Add/Remove Tag");
       while (!successRead) {
         successRead = getID();
         if ( successRead == true) {
           for (int i = 0; i < 100; i++) {
             if (tagID == myTags[i]) {
               myTags[i] = "";
-              lcd.clear();
-              lcd.setCursor(0, 0);
-              lcd.print("  Tag Removed!");
+              Serial.print("Tag Removed!");
               printNormalModeMessage();
               return;
             }
           }
           myTags[tagsCount] = strdup(tagID.c_str());
-          lcd.clear();
-          lcd.setCursor(0, 0);
-          lcd.print("   Tag Added!");
+          Serial.print("Tag Added!");
           printNormalModeMessage();
           tagsCount++;
           return;
@@ -108,26 +89,17 @@ void loop() {
     // Checks whether the scanned tag is authorized
     for (int i = 0; i < 100; i++) {
       if (tagID == myTags[i]) {
-        lcd.clear();
-        lcd.setCursor(0, 0);
-        lcd.print(" Access Granted!");
-        myServo.write(170); // Unlocks the door
+        Serial.print("Access Granted!");
         printNormalModeMessage();
         correctTag = true;
       }
     }
     if (correctTag == false) {
-      lcd.clear();
-      lcd.setCursor(0, 0);
-      lcd.print(" Access Denied!");
+      Serial.print("Access Denied!");
       printNormalModeMessage();
     }
   }
-  // If door is open...
   else {
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print(" Door Opened!");
     while (!doorOpened) {
       proximitySensor = analogRead(A0);
       if (proximitySensor > 200) {
@@ -136,7 +108,6 @@ void loop() {
     }
     doorOpened = false;
     delay(500);
-    myServo.write(10); // Locks the door
     printNormalModeMessage();
   }
 }
@@ -161,8 +132,6 @@ uint8_t getID() {
 
 void printNormalModeMessage() {
   delay(1500);
-  lcd.clear();
-  lcd.print("-Access Control-");
-  lcd.setCursor(0, 1);
-  lcd.print(" Scan Your Tag!");
+  Serial.print("-Access Control-");
+  Serial.print(" Scan Your Tag!");
 }
